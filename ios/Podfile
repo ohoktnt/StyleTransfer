@@ -12,6 +12,8 @@ target 'StyleTransfer' do
     :hermes_enabled => false
   )
 
+  pod 'RNVectorIcons', :path => '../node_modules/react-native-vector-icons'
+
   target 'StyleTransferTests' do
     inherit! :complete
     # Pods for testing
