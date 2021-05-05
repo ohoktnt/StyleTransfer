@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import {View, Text, Image, StyleSheet} from 'react-native';
 import {Button} from 'react-native-elements';
 import ProgressBar from 'react-native-progress/Bar';
+import {launchImageLibrary} from 'react-native-image-picker';
 
 export default class App extends Component {
   render() {
