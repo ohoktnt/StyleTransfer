@@ -3,10 +3,102 @@ import {View, Text, Image, StyleSheet} from 'react-native';
 import {Button} from 'react-native-elements';
 import ProgressBar from 'react-native-progress/Bar';
 import {launchImageLibrary} from 'react-native-image-picker';
+import axios from 'axios';
 
 export default class App extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      baseImageUser: null,
+      styleImageUser: null,
+      loading: true,
+      dataSource: null,
+    };
+  }
+
+  selectBaseImage() {
+    const options = {
+      includeBase64: true,
+    };
+    launchImageLibrary(options, response => {
+      if (response.didCancel) {
+        console.log('User Cancelled Image Picker');
+      } else if (response.error) {
+        console.log('Error Occurred');
+      } else if (response.customButton) {
+        console.log('User pressed custom buttom');
+      } else {
+        // console.log(response);
+        this.setState({
+          baseImageUser: response.base64,
+        });
+      }
+    });
+  }
+
+  selectStyleImage() {
+    const options = {
+      includeBase64: true,
+    };
+    launchImageLibrary(options, response => {
+      if (response.didCancel) {
+        console.log('User Cancelled Image Picker');
+      } else if (response.error) {
+        console.log('Error Occurred');
+      } else if (response.customButton) {
+        console.log('User pressed custom buttom');
+      } else {
+        // console.log(response);
+        this.setState({
+          styleImageUser: response.base64,
+        });
+      }
+    });
+  }
+
+  goBackFunction() {
+    this.setState({
+      baseImageUser: null,
+      styleImageUser: null,
+    });
+  }
+
+  goForAxios() {
+    const {baseImageUser, styleImageUser} = this.state;
+    console.log('Starting request');
+
+    axios
+      .request({
+        method: 'POST',
+        url: 'https://ai-art-maker.p.rapidapi.com/art-remixer-api-bin',
+        headers: {
+          'content-type': 'application/json',
+          'x-rapidapi-key':
+            '34986c28e0mshc68992223a227ffp13653ejsna014a46c3df3',
+          'x-rapidapi-host': 'ai-art-maker.p.rapidapi.com',
+        },
+        data: {
+          base64ContentImage: baseImageUser,
+          base64StyleImageList: [styleImageUser],
+          focusContent: true,
+        },
+      })
+      .then(response => {
+        console.log('completed axios call');
+        this.setState({
+          loading: false,
+          dataSource: response.data.base64Image,
+        });
+      })
+      .catch(error => {
+        console.log(error);
+      });
+  }
+
   render() {
-    return (
+    const {baseImageUser, styleImageUser, loading, dataSource} = this.state;
+
+    return baseImageUser == null || styleImageUser == null ? (
       <View style={styles.container}>
         <View style={styles.titleContainer}>
           <Text style={styles.title}>Neural Style Transfer</Text>
@@ -18,13 +110,50 @@ export default class App extends Component {
             style={styles.artImage}></Image>
         </View>
         <View style={styles.buttonContainer}>
-          <Button
-            title="Select Base Image"
-            buttonStyle={styles.button}></Button>
-          <Button
-            title="Select Style Image"
-            buttonStyle={styles.button}></Button>
+          {baseImageUser ? (
+            <ProgressBar indeterminate={true}></ProgressBar>
+          ) : (
+            <Button
+              title="Select Base Image"
+              buttonStyle={styles.button}
+              onPress={this.selectBaseImage.bind(this)}></Button>
+          )}
+          {styleImageUser ? (
+            <ProgressBar indeterminate={true}></ProgressBar>
+          ) : (
+            <Button
+              title="Select Style Image"
+              buttonStyle={styles.button}
+              onPress={this.selectStyleImage.bind(this)}></Button>
+          )}
         </View>
+      </View>
+    ) : (
+      <View style={styles.outputContainer}>
+        <Button
+          title="Go to Menu"
+          buttonStyle={styles.buttonBack}
+          containerStyle={styles.buttonBackContainer}
+          onPress={this.goBackFunction.bind(this)}></Button>
+        <Button
+          title="Transfer Image"
+          buttonStyle={styles.button}
+          containerStyle={styles.buttonTransferContainer}
+          onPress={this.goForAxios.bind(this)}></Button>
+        {baseImageUser ? (
+          <Image
+            source={{uri: `data:image/png;base64,${baseImageUser}`}}
+            style={styles.images}></Image>
+        ) : (
+          <ProgressBar indeterminate={true}></ProgressBar>
+        )}
+        {loading ? (
+          <ProgressBar indeterminate={true}></ProgressBar>
+        ) : (
+          <Image
+            source={{uri: `data:image/png;base64,${dataSource}`}}
+            style={styles.images}></Image>
+        )}
       </View>
     );
   }
@@ -66,5 +195,30 @@ const styles = StyleSheet.create({
   artImage: {
     width: 260,
     height: 260,
+  },
+  outputContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#6a8fe6',
+  },
+  buttonBack: {
+    width: 150,
+    height: 50,
+    backgroundColor: 'black',
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  buttonBackContainer: {
+    marginTop: 3,
+  },
+  buttonTransferContainer: {
+    margin: 10,
+  },
+  images: {
+    width: 250,
+    height: 250,
+    resizeMode: 'stretch',
+    margin: 2,
   },
 });
